@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, render_template
 from flask_mysqldb import MySQL
 from flask_cors import CORS
 
@@ -16,22 +16,34 @@ app.config['MYSQL_DB'] = 'college_db'
 mysql = MySQL(app)
 
 # -----------------------
+# HOME PAGE (IMPORTANT FIX)
+# -----------------------
+@app.route('/')
+def home():
+    return render_template("index.html")
+
+
+# -----------------------
 # ADD STUDENT
 # -----------------------
 @app.route('/add', methods=['POST'])
 def add_student():
-    data = request.json
+    try:
+        data = request.json
 
-    cur = mysql.connection.cursor()
-    cur.execute("""
-        INSERT INTO students (name, email, course, gender, review)
-        VALUES (%s, %s, %s, %s, %s)
-    """, (data['name'], data['email'], data['course'],
-          data['gender'], data['review']))
-    mysql.connection.commit()
-    cur.close()
+        cur = mysql.connection.cursor()
+        cur.execute("""
+            INSERT INTO students (name, email, course, gender, review)
+            VALUES (%s, %s, %s, %s, %s)
+        """, (data['name'], data['email'], data['course'],
+              data['gender'], data['review']))
+        mysql.connection.commit()
+        cur.close()
 
-    return jsonify({"message": "Student Added Successfully"})
+        return jsonify({"message": "Student Added Successfully"})
+    
+    except Exception as e:
+        return jsonify({"error": str(e)})
 
 
 # -----------------------
@@ -39,23 +51,27 @@ def add_student():
 # -----------------------
 @app.route('/get', methods=['GET'])
 def get_students():
-    cur = mysql.connection.cursor()
-    cur.execute("SELECT * FROM students")
-    rows = cur.fetchall()
-    cur.close()
+    try:
+        cur = mysql.connection.cursor()
+        cur.execute("SELECT * FROM students")
+        rows = cur.fetchall()
+        cur.close()
 
-    students = []
-    for row in rows:
-        students.append({
-            "id": row[0],
-            "name": row[1],
-            "email": row[2],
-            "course": row[3],
-            "gender": row[4],
-            "review": row[5]
-        })
+        students = []
+        for row in rows:
+            students.append({
+                "id": row[0],
+                "name": row[1],
+                "email": row[2],
+                "course": row[3],
+                "gender": row[4],
+                "review": row[5]
+            })
 
-    return jsonify(students)
+        return jsonify(students)
+
+    except Exception as e:
+        return jsonify({"error": str(e)})
 
 
 # -----------------------
@@ -63,19 +79,23 @@ def get_students():
 # -----------------------
 @app.route('/update/<int:id>', methods=['PUT'])
 def update_student(id):
-    data = request.json
+    try:
+        data = request.json
 
-    cur = mysql.connection.cursor()
-    cur.execute("""
-        UPDATE students
-        SET name=%s, email=%s, course=%s, gender=%s, review=%s
-        WHERE id=%s
-    """, (data['name'], data['email'], data['course'],
-          data['gender'], data['review'], id))
-    mysql.connection.commit()
-    cur.close()
+        cur = mysql.connection.cursor()
+        cur.execute("""
+            UPDATE students
+            SET name=%s, email=%s, course=%s, gender=%s, review=%s
+            WHERE id=%s
+        """, (data['name'], data['email'], data['course'],
+              data['gender'], data['review'], id))
+        mysql.connection.commit()
+        cur.close()
 
-    return jsonify({"message": "Student Updated Successfully"})
+        return jsonify({"message": "Student Updated Successfully"})
+
+    except Exception as e:
+        return jsonify({"error": str(e)})
 
 
 # -----------------------
@@ -83,13 +103,20 @@ def update_student(id):
 # -----------------------
 @app.route('/delete/<int:id>', methods=['DELETE'])
 def delete_student(id):
-    cur = mysql.connection.cursor()
-    cur.execute("DELETE FROM students WHERE id=%s", (id,))
-    mysql.connection.commit()
-    cur.close()
+    try:
+        cur = mysql.connection.cursor()
+        cur.execute("DELETE FROM students WHERE id=%s", (id,))
+        mysql.connection.commit()
+        cur.close()
 
-    return jsonify({"message": "Student Deleted Successfully"})
+        return jsonify({"message": "Student Deleted Successfully"})
+
+    except Exception as e:
+        return jsonify({"error": str(e)})
 
 
+# -----------------------
+# RUN APP
+# -----------------------
 if __name__ == '__main__':
     app.run(debug=True)
