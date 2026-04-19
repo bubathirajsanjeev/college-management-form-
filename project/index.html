@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>College Student Form</title>
+    <style>
+        body { font-family: Arial; background: #f2f2f2; }
+
+        .container {
+            width: 700px;
+            margin: 30px auto;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0px 0px 10px gray;
+        }
+
+        input, select, textarea {
+            width: 100%;
+            padding: 8px;
+            margin: 6px 0;
+        }
+
+        button {
+            padding: 6px 10px;
+            border: none;
+            cursor: pointer;
+            margin: 2px;
+        }
+
+        .save-btn { background: green; color: white; }
+        .edit-btn { background: orange; color: white; }
+        .delete-btn { background: red; color: white; }
+
+        table {
+            width: 100%;
+            margin-top: 20px;
+            border-collapse: collapse;
+        }
+
+        table, th, td {
+            border: 1px solid black;
+            padding: 6px;
+            text-align: center;
+        }
+
+        .gender-group { display: flex; gap: 20px; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>College Student Form</h2>
+
+    <input type="hidden" id="studentId">
+
+    <input type="text" id="name" placeholder="Enter Name">
+    <input type="email" id="email" placeholder="Enter Email">
+
+    <select id="course">
+        <option value="">Select Course</option>
+        <option>BCA</option>
+        <option>MCA</option>
+        <option>BAA</option>
+        <option>MBA</option>
+    </select>
+
+    <div class="gender-group">
+        <label><input type="radio" name="gender" value="Male"> Male</label>
+        <label><input type="radio" name="gender" value="Female"> Female</label>
+    </div>
+
+    <textarea id="review" placeholder="Enter Review"></textarea>
+
+    <button class="save-btn" onclick="saveStudent()">Save</button>
+
+    <table>
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Name</th>
+                <th>Email</th>
+                <th>Course</th>
+                <th>Gender</th>
+                <th>Review</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody id="studentTable"></tbody>
+    </table>
+</div>
+
+<script>
+const API = "http://127.0.0.1:5000";
+
+function loadStudents() {
+    fetch(`${API}/get`)
+    .then(res => res.json())
+    .then(data => {
+        let rows = "";
+
+        data.forEach(student => {
+            rows += `
+                <tr>
+                    <td>${student.id}</td>
+                    <td>${student.name}</td>
+                    <td>${student.email}</td>
+                    <td>${student.course}</td>
+                    <td>${student.gender}</td>
+                    <td>${student.review}</td>
+                    <td>
+                        <button class="edit-btn"
+                            onclick="editStudent(${student.id}, '${student.name}', '${student.email}', '${student.course}', '${student.gender}', '${student.review}')">
+                            Edit
+                        </button>
+                        <button class="delete-btn"
+                            onclick="deleteStudent(${student.id})">
+                            Delete
+                        </button>
+                    </td>
+                </tr>
+            `;
+        });
+
+        document.getElementById("studentTable").innerHTML = rows;
+    });
+}
+
+function saveStudent() {
+    let id = document.getElementById("studentId").value;
+    let name = document.getElementById("name").value;
+    let email = document.getElementById("email").value;
+    let course = document.getElementById("course").value;
+    let gender = document.querySelector('input[name="gender"]:checked')?.value;
+    let review = document.getElementById("review").value;
+
+    let data = { name, email, course, gender, review };
+
+    if (id) {
+        fetch(`${API}/update/${id}`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(data)
+        }).then(() => {
+            clearForm();
+            loadStudents();
+        });
+    } else {
+        fetch(`${API}/add`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(data)
+        }).then(() => {
+            clearForm();
+            loadStudents();
+        });
+    }
+}
+
+function editStudent(id, name, email, course, gender, review) {
+    document.getElementById("studentId").value = id;
+    document.getElementById("name").value = name;
+    document.getElementById("email").value = email;
+    document.getElementById("course").value = course;
+    document.querySelector(`input[name="gender"][value="${gender}"]`).checked = true;
+    document.getElementById("review").value = review;
+}
+
+function deleteStudent(id) {
+    fetch(`${API}/delete/${id}`, { method: "DELETE" })
+    .then(() => loadStudents());
+}
+
+function clearForm() {
+    document.getElementById("studentId").value = "";
+    document.getElementById("name").value = "";
+    document.getElementById("email").value = "";
+    document.getElementById("course").value = "";
+    document.querySelectorAll('input[name="gender"]').forEach(r => r.checked = false);
+    document.getElementById("review").value = "";
+}
+
+loadStudents();
+</script>   
+
+</body>
+</html>
